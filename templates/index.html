@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Search Pro</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-dark: #0a0e1a;
+            --primary-darker: #060810;
+            --primary-navy: #0d1525;
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --accent-blue-glow: rgba(59, 130, 246, 0.4);
+            --light-blue: #60a5fa;
+            --lighter-blue: #93c5fd;
+            --light-text: #e2e8f0;
+            --gray-text: #64748b;
+            --muted-text: #475569;
+            --border-color: rgba(59, 130, 246, 0.2);
+            --border-color-hover: rgba(59, 130, 246, 0.4);
+            --card-bg: rgba(13, 21, 37, 0.85);
+            --success-color: #22c55e;
+            --error-color: #ef4444;
+            --warning-color: #fbbf24;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: var(--primary-dark);
+            color: var(--light-text);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Background image with low opacity */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('/static/stitch-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            opacity: 0.12;
+            z-index: -2;
+            filter: brightness(0.5) contrast(1.1);
+        }
+
+        /* Gradient overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg,
+                    rgba(10, 14, 26, 0.6) 0%,
+                    rgba(10, 14, 26, 0.4) 50%,
+                    rgba(10, 14, 26, 0.7) 100%);
+            z-index: -1;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top: 3px solid var(--accent-blue);
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--gray-text);
+        }
+
+        /* Main App */
+        .main-app {
+            display: none;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 14, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: none;
+        }
+
+        .logo-icon {
+            display: none;
+        }
+
+        .logo-text {
+            display: none;
+        }
+
+        .logo-name {
+            display: none;
+        }
+
+        .logo-tagline {
+            display: none;
+        }
+
+        /* User section in header */
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .status-id {
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .logout-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--gray-text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .logout-link:hover {
+            color: var(--light-text);
+            border-color: var(--border-color-hover);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* User Profile Dropdown */
+        .user-profile {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-navy), var(--accent-blue));
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .user-avatar:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px var(--accent-blue-glow);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            background: var(--primary-navy);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            min-width: 280px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .user-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .dropdown-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--light-blue));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .dropdown-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--light-text);
+        }
+
+        .dropdown-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--gray-text);
+        }
+
+        .dropdown-content {
+            padding: 1rem;
+        }
+
+        .emails-section h4 {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
+        }
+
+        .emails-info {
+            margin-bottom: 1rem;
+        }
+
+        .email-access-info {
+            padding: 0.75rem 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--light-blue);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--error-color);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--error-color);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 5rem 1.5rem 1.5rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-wrapper {
+            margin: auto 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Terminal Header */
+        .terminal-header {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .terminal-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gray-text);
+        }
+
+        .terminal-text .prompt {
+            color: var(--accent-blue);
+        }
+
+        .terminal-text .command {
+            color: var(--light-blue);
+        }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 8px;
+            height: 14px;
+            background: var(--accent-blue);
+            margin-left: 4px;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Brand Title */
+        .brand-title {
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .brand-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--light-text);
+            letter-spacing: -0.02em;
+        }
+
+        .brand-name .bracket {
+            color: var(--gray-text);
+        }
+
+        .brand-subtitle {
+            font-size: 0.95rem;
+            color: var(--gray-text);
+            margin-bottom: 1rem;
+        }
+
+        /* Search Container */
+        .search-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 700px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .info-box-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-box-icon {
+            color: var(--accent-blue);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .info-box-title {
+            color: var(--light-text);
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: var(--gray-text);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .info-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-list .number {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--muted-text);
+            font-weight: 600;
+            min-width: 24px;
+        }
+
+        /* Search Form */
+        .search-form {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--primary-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: var(--light-text);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .form-input::placeholder {
+            color: var(--muted-text);
+        }
+
+        .search-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .search-btn:hover:not(:disabled) {
+            background: var(--accent-blue-hover);
+            box-shadow: 0 8px 25px var(--accent-blue-glow);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .search-btn.loading {
+            position: relative;
+        }
+
+        .search-btn.loading .btn-icon {
+            opacity: 0;
+        }
+
+        .search-btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Statistics Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-color-hover);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            width: 40px;
+            height: 40px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.15);
+            border-radius: 10px;
+        }
+
+        .stat-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--accent-blue);
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .stat-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        /* Search Results */
+        .search-result {
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 3px solid;
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .search-result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .search-result.success {
+            background: rgba(34, 197, 94, 0.1);
+            border-left-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .search-result.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--error-color);
+            color: var(--error-color);
+        }
+
+        .search-result.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--accent-blue);
+            color: var(--light-blue);
+        }
+
+        /* Result Overlay */
+        .result-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .result-overlay.show {
+            display: flex;
+        }
+
+        /* Disney Code Result */
+        .disney-result {
+            background: var(--primary-navy);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            border-radius: 16px;
+            padding: 1.75rem;
+            width: 100%;
+            max-width: 520px;
+            position: relative;
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .result-overlay.show .disney-result {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        .result-close-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--gray-text);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+
+        .result-close-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: var(--error-color);
+        }
+
+        .disney-result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        .disney-code {
+            background: var(--primary-darker);
+            border: 2px solid var(--success-color);
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 800;
+            text-align: center;
+            color: var(--success-color);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 3px;
+        }
+
+        .disney-code:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+        }
+
+        .disney-details {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .disney-label {
+            color: var(--gray-text);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .disney-value {
+            color: var(--light-text);
+            word-break: break-all;
+        }
+
+        /* Footer terminal */
+        .footer-terminal {
+            text-align: center;
+            margin-top: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--gray-text);
+        }
+
+        .footer-terminal .prompt {
+            color: var(--accent-blue);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+
+            .logo-text {
+                display: none;
+            }
+
+            .user-status {
+                display: none;
+            }
+
+            .main-content {
+                padding: 2rem 1rem;
+            }
+
+            .brand-name {
+                font-size: 2rem;
+            }
+
+            .brand-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .search-container {
+                padding: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+
+            .search-btn {
+                width: 100%;
+                height: 48px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .brand-name {
+                font-size: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 1rem 0.75rem;
+            }
+
+            .stat-number {
+                font-size: 1.25rem;
+            }
+
+            .disney-code {
+                font-size: 1.25rem;
+                letter-spacing: 2px;
+            }
+        }
+
+        /* ═══════════════════════════════════════ */
+        /* SERVICE SELECTOR                       */
+        /* ═══════════════════════════════════════ */
+        .service-selector {
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 1.25rem;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .service-selector-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+        }
+
+        .service-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .service-btn {
+            padding: 0.7rem 0.5rem;
+            background: rgba(13, 21, 37, 0.85);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--gray-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 9px;
+        }
+
+        .service-btn[data-service="disney"]::before {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.08));
+        }
+
+        .service-btn[data-service="max"]::before {
+            background: linear-gradient(135deg, rgba(0, 43, 231, 0.15), rgba(0, 31, 196, 0.08));
+        }
+
+        .service-btn[data-service="netflix"]::before {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.15), rgba(180, 7, 15, 0.08));
+        }
+
+        .service-btn:hover::before {
+            opacity: 1;
+        }
+
+        .service-btn:hover {
+            color: var(--light-text);
+            border-color: var(--border-color-hover);
+            transform: translateY(-2px);
+        }
+
+        .service-btn[data-service="disney"]:hover,
+        .service-btn[data-service="disney"].active {
+            border-color: #3b82f6;
+            color: #93c5fd;
+        }
+
+        .service-btn[data-service="max"]:hover,
+        .service-btn[data-service="max"].active {
+            border-color: #002be7;
+            color: #6680f7;
+        }
+
+        .service-btn[data-service="netflix"]:hover,
+        .service-btn[data-service="netflix"].active {
+            border-color: #e5091e;
+            color: #ff6b76;
+        }
+
+        .service-btn.active {
+            transform: translateY(-2px);
+        }
+
+        .service-btn.active::before {
+            opacity: 1;
+        }
+
+        .service-btn .svc-name {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-btn .svc-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-btn[data-service="disney"] .svc-dot {
+            background: #3b82f6;
+        }
+
+        .service-btn[data-service="max"] .svc-dot {
+            background: #002be7;
+        }
+
+        .service-btn[data-service="netflix"] .svc-dot {
+            background: #e5091e;
+        }
+
+        /* Sub-selector */
+        .sub-selector {
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 1.25rem;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .sub-selector.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sub-selector-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--gray-text);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .sub-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .sub-btn {
+            padding: 0.55rem 1rem;
+            background: rgba(13, 21, 37, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--gray-text);
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .sub-btn:hover {
+            color: var(--light-text);
+            border-color: var(--accent-blue);
+            background: rgba(var(--accent-blue-rgb, 59, 130, 246), 0.1);
+        }
+
+        .sub-btn.active {
+            color: var(--light-text);
+            border-color: var(--accent-blue);
+            background: rgba(var(--accent-blue-rgb, 59, 130, 246), 0.15);
+            box-shadow: 0 0 10px rgba(var(--accent-blue-rgb, 59, 130, 246), 0.2);
+        }
+
+        /* Theme transition on body */
+        body,
+        .header,
+        .search-container,
+        .service-btn,
+        .sub-btn,
+        .stat-card,
+        .info-box,
+        .form-input,
+        .search-btn {
+            transition: border-color 0.4s ease, background 0.4s ease,
+                color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        @media (max-width: 600px) {
+            .service-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .sub-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════ */
+        /* Service Selector                                       */
+        /* ═══════════════════════════════════════════════════════ */
+        .service-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .service-btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--gray-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .service-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--light-text);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .service-btn.active {
+            border-color: var(--accent-blue);
+            background: var(--accent-blue);
+            color: #fff;
+            box-shadow: 0 4px 20px var(--accent-blue-glow);
+        }
+
+        .service-selector.collapsed {
+            justify-content: flex-start;
+        }
+
+        .service-selector.collapsed .service-btn:not(.active) {
+            display: none;
+        }
+
+        .service-selector.collapsed .service-btn.active {
+            cursor: pointer;
+            font-size: 0.7rem;
+            padding: 0.4rem 0.9rem;
+        }
+
+        .service-change-hint {
+            display: none;
+            font-size: 0.65rem;
+            color: var(--gray-text);
+            margin-left: 0.5rem;
+            align-self: center;
+            font-style: italic;
+        }
+
+        .service-selector.collapsed .service-change-hint {
+            display: inline;
+        }
+
+        /* Sub-option selector */
+        .sub-option-selector {
+            display: none;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .sub-option-selector.visible {
+            display: flex;
+        }
+
+        .sub-option-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--gray-text);
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sub-option-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--light-text);
+        }
+
+        .sub-option-btn.active {
+            border-color: var(--accent-blue);
+            background: rgba(var(--accent-blue-rgb, 59, 130, 246), 0.15);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        /* Smooth theme transition */
+        body,
+        .header,
+        .search-container,
+        .stat-card,
+        .info-box,
+        .form-input,
+        .search-btn,
+        .service-btn,
+        .sub-option-btn,
+        .disney-result,
+        .disney-code,
+        .search-result {
+            transition: border-color 0.4s ease, background 0.4s ease,
+                box-shadow 0.4s ease, color 0.4s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">&gt; Iniciando sesión...</div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="main-app" id="main-app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div style="flex: 1;"></div>
+
+                <div class="user-section">
+                    <div class="user-status">
+                        <span class="status-badge">ACTIVE</span>
+                        <span>·</span>
+                        <span>ID:</span>
+                        <span class="status-id" id="header-user-id">---</span>
+                    </div>
+
+                    <div class="user-profile">
+                        <div class="user-avatar" id="user-avatar"><img
+                                src="/static/585e4beacb11b227491c3399-3164500318.png" alt="User Avatar"
+                                style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+
+                        <div class="user-dropdown" id="user-dropdown">
+                            <div class="dropdown-header">
+                                <div class="dropdown-avatar"><img src="/static/585e4beacb11b227491c3399-3164500318.png"
+                                        alt="User Avatar"
+                                        style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+                                <div class="dropdown-name" id="user-name">Usuario</div>
+                                <div class="dropdown-id" id="user-id">ID: ...</div>
+                            </div>
+                            <div class="dropdown-content">
+                                <div class="emails-section">
+                                    <h4>📧 Estado de Cuenta</h4>
+                                    <div class="emails-info" id="emails-info">
+                                        <div class="email-access-info">Cuenta Activa</div>
+                                    </div>
+                                </div>
+                                <button class="logout-btn" id="logout-btn">↪ Cerrar Sesión</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="logout-link" id="logout-btn-header">
+                        <span>↪</span>
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="main-wrapper">
+                <div class="terminal-header">
+                    <div class="terminal-text">
+                        <span class="prompt">&gt;_</span> <span class="prompt">&gt;</span> <span class="command"
+                            id="terminal-command">search.init()</span><span class="cursor-blink"></span>
+                    </div>
+                </div>
+
+                <div class="brand-title">
+                    <h1 class="brand-name"><span class="bracket">[</span><span id="brand-service-name">Search
+                            Pro</span><span class="bracket">]</span></h1>
+                </div>
+                <p class="brand-subtitle" id="brand-subtitle">Selecciona un servicio para comenzar</p>
+
+                <!-- Service Selector -->
+                <div class="service-selector" id="service-selector">
+                    <div class="service-selector-label">&gt; Seleccionar servicio</div>
+                    <div class="service-buttons">
+                        <button class="service-btn" data-service="disney" id="btn-disney">
+                            <span class="svc-dot"></span><span class="svc-name">Disney</span>
+                        </button>
+                        <button class="service-btn" data-service="max" id="btn-max">
+                            <span class="svc-dot"></span><span class="svc-name">Max</span>
+                        </button>
+                        <button class="service-btn" data-service="netflix" id="btn-netflix">
+                            <span class="svc-dot"></span><span class="svc-name">Netflix</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-option Selector -->
+                <div class="sub-selector" id="sub-selector">
+                    <div class="sub-selector-label" id="sub-selector-label">&gt; Tipo de búsqueda</div>
+                    <div class="sub-buttons" id="sub-buttons"></div>
+                </div>
+
+                <div class="search-container">
+                    <!-- Statistics removed -->
+                    <!-- Info Box -->
+                    <div class="info-box">
+                        <div class="info-box-header">
+                            <span class="info-box-icon">&gt;</span>
+                            <span class="info-box-title" id="search-description">Selecciona una opción para
+                                continuar:</span>
+                        </div>
+                        <ul class="info-list">
+                            <li>
+                                <span class="number">01.</span>
+                                <span>Ingresa el correo electrónico a buscar</span>
+                            </li>
+                            <li>
+                                <span class="number">02.</span>
+                                <span>El sistema buscará códigos de los últimos 2 días</span>
+                            </li>
+                            <li>
+                                <span class="number">03.</span>
+                                <span>Copia el código con un click</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Search Form -->
+                    <form class="search-form" id="search-form">
+                        <div class="search-input-wrapper">
+                            <input type="email" class="form-input" id="email-input" placeholder="usuario@email.com"
+                                required autocomplete="off">
+                        </div>
+                        <button type="submit" class="search-btn" id="search-btn">
+                            <span class="btn-icon">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
+                                    style="width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2;">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="M 21 21 L 16.65 16.65" />
+                                </svg>
+                            </span>
+                        </button>
+                    </form>
+
+                    <div class="search-result" id="search-result"></div>
+                </div>
+            </div>
+
+            <div class="footer-terminal">
+                <span class="prompt">&gt;</span> load_features()<span class="cursor-blink"></span>
+            </div>
+        </main>
+    </div>
+
+    <!-- Result Overlay (outside main container to float above everything) -->
+    <div class="result-overlay" id="result-overlay" onclick="if(event.target===this) hideDisneyResult()">
+        <div class="disney-result" id="disney-result"></div>
+    </div>
+
+    <script>
+        // Variables globales
+        let csrfToken = null;
+        let userEmails = [];
+        let currentUser = null;
+        let searchCount = 0;
+        let currentService = 'disney';
+        let currentSubOption = '';
+
+        // Configuración de servicios (temas + sub-opciones)
+        const SERVICE_THEMES = {
+            disney: {
+                name: 'Disney Search',
+                subtitle: 'Búsqueda inteligente de códigos Disney',
+                accent: '#3b82f6',
+                accentHover: '#2563eb',
+                accentGlow: 'rgba(59,130,246,0.4)',
+                light: '#60a5fa',
+                lighter: '#93c5fd',
+                border: 'rgba(59,130,246,0.2)',
+                borderHover: 'rgba(59,130,246,0.4)',
+                success: '#22c55e',
+                subOptions: null  // Disney usa sus patrones internos
+            },
+            max: {
+                name: 'Max Search',
+                subtitle: 'Búsqueda de links y códigos Max (HBO)',
+                accent: '#002be7',
+                accentHover: '#001fc4',
+                accentGlow: 'rgba(0,43,231,0.4)',
+                light: '#4d6fff',
+                lighter: '#8099ff',
+                border: 'rgba(0,43,231,0.2)',
+                borderHover: 'rgba(0,43,231,0.4)',
+                success: '#002be7',
+                subOptions: {
+                    max_reset: 'Link de Restablecimiento',
+                    max_code: 'Código de Activación'
+                }
+            },
+            netflix: {
+                name: 'Netflix Search',
+                subtitle: 'Búsqueda de links y códigos Netflix',
+                accent: '#e5091e',
+                accentHover: '#b4070f',
+                accentGlow: 'rgba(229,9,20,0.4)',
+                light: '#ff4d5a',
+                lighter: '#ff8b94',
+                border: 'rgba(229,9,20,0.2)',
+                borderHover: 'rgba(229,9,20,0.4)',
+                success: '#e5091e',
+                subOptions: {
+                    netflix_reset: 'Link de Restablecimiento',
+                    netflix_update_home: 'Actualizar Hogar',
+                    netflix_home_code: 'Código de Hogar',
+                    netflix_login_code: 'Código de Inicio de Sesión',
+                    netflix_close_sessions: 'Cerrar Sesiones',
+                    netflix_activation: 'Link de Activación'
+                }
+            }
+        };
+
+        // ═══════════════════════════════════════════
+        // Multi-Service State
+        // ═══════════════════════════════════════════
+        let selectedService = null;   // 'disney' | 'max' | 'netflix'
+        let selectedSubOption = null; // sub-option key
+
+        // Service metadata for the frontend
+        const SERVICE_META = {
+            disney: {
+                name: 'Disney',
+                brandName: 'Disney Search',
+                subtitle: 'Búsqueda inteligente de códigos Disney',
+                terminalCmd: 'disney.search.init()',
+                primary: '#3b82f6',
+                hover: '#2563eb',
+                glow: 'rgba(59,130,246,0.4)',
+                light: '#60a5fa',
+                lighter: '#93c5fd',
+                border: 'rgba(59,130,246,0.2)',
+                borderHover: 'rgba(59,130,246,0.4)',
+                rgb: '59,130,246',
+                subOptions: null  // Disney uses ALL patterns automatically
+            },
+            max: {
+                name: 'Max',
+                brandName: 'Max Search',
+                subtitle: 'Búsqueda de links y códigos Max (HBO)',
+                terminalCmd: 'max.search.init()',
+                primary: '#002be7',
+                hover: '#001fc4',
+                glow: 'rgba(0,43,231,0.4)',
+                light: '#4d6df2',
+                lighter: '#6680f7',
+                border: 'rgba(0,43,231,0.2)',
+                borderHover: 'rgba(0,43,231,0.4)',
+                rgb: '0,43,231',
+                subOptions: {
+                    max_reset: 'Link de Restablecimiento',
+                    max_code: 'Código de Activación'
+                }
+            },
+            netflix: {
+                name: 'Netflix',
+                brandName: 'Netflix Search',
+                subtitle: 'Búsqueda de links y códigos Netflix',
+                terminalCmd: 'netflix.search.init()',
+                primary: '#e5091e',
+                hover: '#b4070f',
+                glow: 'rgba(229,9,20,0.4)',
+                light: '#ff4d5a',
+                lighter: '#ff8b94',
+                border: 'rgba(229,9,20,0.2)',
+                borderHover: 'rgba(229,9,20,0.4)',
+                rgb: '229,9,20',
+                subOptions: {
+                    netflix_reset: 'Link de Restablecimiento',
+                    netflix_update_home: 'Actualizar Hogar',
+                    netflix_home_code: 'Código de Hogar',
+                    netflix_login_code: 'Código de Inicio de Sesión',
+                    netflix_close_sessions: 'Cerrar Sesiones',
+                    netflix_activation: 'Link de Activación'
+                }
+            }
+        };
+
+        // ✅ SECURITY: HTML Sanitization Function
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                unsafe = String(unsafe);
+            }
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        const loadingScreen = document.getElementById('loading-screen');
+        const mainApp = document.getElementById('main-app');
+        const userAvatarBtn = document.getElementById('user-avatar');
+        const userDropdown = document.getElementById('user-dropdown');
+        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtnHeader = document.getElementById('logout-btn-header');
+        const searchForm = document.getElementById('search-form');
+        const emailInput = document.getElementById('email-input');
+        const searchBtn = document.getElementById('search-btn');
+        const searchResultDiv = document.getElementById('search-result');
+        const disneyResultDiv = document.getElementById('disney-result');
+
+        // Inicializar aplicación
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                await checkAuthentication();
+                await getCSRFToken();
+                await loadUserData();
+                setupEventListeners();
+                setupServiceSelector();
+                updateStatistics();
+                updateSearchDescription();
+
+                loadingScreen.style.display = 'none';
+                mainApp.style.display = 'block';
+            } catch (error) {
+                console.error('Error inicializando dashboard:', error);
+                window.location.href = '/login';
+            }
+        });
+
+        // Verificar autenticación
+        async function checkAuthentication() {
+            const response = await fetch('/api/auth/check', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('No autenticado');
+            }
+
+            const data = await response.json();
+            currentUser = data.user;
+        }
+
+        // Obtener token CSRF
+        async function getCSRFToken() {
+            const response = await fetch('/api/csrf-token', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Error obteniendo CSRF token');
+            }
+
+            const data = await response.json();
+            csrfToken = data.csrfToken;
+        }
+
+        // Cargar datos del usuario
+        async function loadUserData() {
+            const response = await fetch('/api/user/emails', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Error cargando emails');
+            }
+
+            const data = await response.json();
+            userEmails = data.emails;
+
+            window.userAccessInfo = {
+                accessType: data.access_type || 'unknown',
+                message: data.message || '',
+                emailCount: userEmails.length,
+                email_count: data.email_count || userEmails.length
+            };
+
+            updateUserInterface();
+        }
+
+        // Actualizar interfaz de usuario - ✅ SECURE: XSS Protection
+        function updateUserInterface() {
+            document.getElementById('user-avatar').innerHTML = '<img src="/static/585e4beacb11b227491c3399-3164500318.png" alt="User Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+            // ✅ SECURITY: Sanitize username and firstName
+            const displayName = escapeHtml(currentUser.username || currentUser.firstName || 'Usuario');
+            document.getElementById('user-name').textContent = displayName;
+            document.getElementById('user-id').textContent = `ID: ${currentUser.telegramId}`;
+            document.getElementById('header-user-id').textContent = currentUser.telegramId;
+
+            const emailsInfo = document.getElementById('emails-info');
+            const emailCountDisplay = document.getElementById('stat-emails');
+
+            let statusText = 'Cuenta Activa';
+
+            if (currentUser.isSuperAdmin) {
+                statusText = 'Super Administrador';
+            } else if (currentUser.isAdmin) {
+                statusText = 'Administrador';
+            } else if (currentUser.free_access) {
+                statusText = 'Acceso Libre';
+            }
+
+            if (emailsInfo) {
+                emailsInfo.innerHTML = `<div class="email-access-info">${statusText}</div>`;
+            }
+            if (emailCountDisplay) {
+                emailCountDisplay.textContent = window.userAccessInfo.emailCount;
+            }
+        }
+
+        // Actualizar estadísticas
+        function updateStatistics() {
+            const searchStat = document.getElementById('stat-searches');
+            if (searchStat) searchStat.textContent = searchCount;
+
+            const statusStat = document.getElementById('stat-status');
+            if (statusStat) statusStat.textContent = 'ON';
+
+            const roleStat = document.getElementById('stat-role');
+            if (roleStat) {
+                let role = 'USER';
+                if (currentUser.isSuperAdmin) role = 'SUPER';
+                else if (currentUser.isAdmin) role = 'ADMIN';
+                else if (currentUser.free_access) role = 'FREE';
+                roleStat.textContent = role;
+            }
+        }
+
+        // Actualizar descripción según el tipo de acceso específico
+        function updateSearchDescription() {
+            const searchDescription = document.getElementById('search-description');
+            const accessInfo = window.userAccessInfo || {};
+
+            let descriptionText = 'Selecciona una opción para continuar:';
+
+            switch (accessInfo.accessType) {
+                case 'super_admin':
+                    descriptionText = 'Super Admin: Busca en cualquier email';
+                    break;
+                case 'admin_restricted':
+                    descriptionText = 'Admin: Busca en emails asignados';
+                    break;
+                case 'free_access':
+                    descriptionText = 'Acceso Libre: Busca en cualquier email';
+                    break;
+                case 'user_restricted':
+                    descriptionText = 'Usuario: Busca en emails asignados';
+                    break;
+            }
+
+            searchDescription.textContent = descriptionText;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // Service Selector Logic
+        // ═══════════════════════════════════════════════════════
+        function selectService(service) {
+            currentService = service;
+            currentSubOption = '';
+
+            const theme = SERVICE_THEMES[service];
+            if (!theme) return;
+
+            // Update CSS variables for theme
+            const root = document.documentElement;
+            root.style.setProperty('--accent-blue', theme.accent);
+            root.style.setProperty('--accent-blue-hover', theme.accentHover);
+            root.style.setProperty('--accent-blue-glow', theme.accentGlow);
+            root.style.setProperty('--light-blue', theme.light);
+            root.style.setProperty('--lighter-blue', theme.lighter);
+            root.style.setProperty('--border-color', theme.border);
+            root.style.setProperty('--border-color-hover', theme.borderHover);
+            root.style.setProperty('--success-color', theme.success);
+
+            // Update brand text
+            document.getElementById('brand-name').innerHTML =
+                `<span class="bracket">[</span>${escapeHtml(theme.name)}<span class="bracket">]</span>`;
+            document.getElementById('brand-subtitle').textContent = theme.subtitle;
+
+            // Update service buttons
+            const selector = document.getElementById('service-selector');
+            selector.querySelectorAll('.service-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.service === service);
+            });
+
+            // Collapse selector after choosing
+            selector.classList.add('collapsed');
+
+            // Build sub-options
+            const subContainer = document.getElementById('sub-option-selector');
+            subContainer.innerHTML = '';
+
+            if (theme.subOptions) {
+                Object.entries(theme.subOptions).forEach(([key, label]) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'sub-option-btn';
+                    btn.dataset.subOption = key;
+                    btn.textContent = label;
+                    btn.addEventListener('click', () => selectSubOption(key));
+                    subContainer.appendChild(btn);
+                });
+                subContainer.classList.add('visible');
+
+                // Auto-select if only one sub-option
+                const keys = Object.keys(theme.subOptions);
+                if (keys.length === 1) {
+                    selectSubOption(keys[0]);
+                }
+            } else {
+                subContainer.classList.remove('visible');
+            }
+
+            // Clear previous results
+            hideSearchResult();
+            hideDisneyResult();
+        }
+
+        function selectSubOption(key) {
+            currentSubOption = key;
+            document.querySelectorAll('.sub-option-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.subOption === key);
+            });
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Toggle dropdown
+            userAvatarBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+
+            // Cerrar dropdown al hacer clic fuera
+            document.addEventListener('click', function (event) {
+                if (!userAvatarBtn.contains(event.target) && !userDropdown.contains(event.target)) {
+                    userDropdown.classList.remove('show');
+                }
+            });
+
+            // Service selector buttons
+            document.querySelectorAll('.service-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const selector = document.getElementById('service-selector');
+                    // If collapsed and clicking the active button, expand to show all
+                    if (selector.classList.contains('collapsed') && this.classList.contains('active')) {
+                        selector.classList.remove('collapsed');
+                        return;
+                    }
+                    selectService(this.dataset.service);
+                });
+            });
+
+            // Formulario de búsqueda
+            searchForm.addEventListener('submit', handleDisneySearch);
+
+            // Botón de logout
+            logoutBtn.addEventListener('click', handleLogout);
+            logoutBtnHeader.addEventListener('click', handleLogout);
+
+            // Input de búsqueda - limpiar resultado al escribir
+            emailInput.addEventListener('input', function () {
+                hideSearchResult();
+                hideDisneyResult();
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // Service Selector Logic
+        // ═══════════════════════════════════════════
+        function setupServiceSelector() {
+            document.querySelectorAll('.service-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectService(btn.dataset.service));
+            });
+        }
+
+        function selectService(service) {
+            const meta = SERVICE_META[service];
+            if (!meta) return;
+
+            selectedService = service;
+            selectedSubOption = null;
+
+            // Highlight active service button
+            document.querySelectorAll('.service-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.service-btn[data-service="${service}"]`).classList.add('active');
+
+            // Apply theme colors via CSS custom properties
+            const root = document.documentElement;
+            root.style.setProperty('--accent-blue', meta.primary);
+            root.style.setProperty('--accent-blue-hover', meta.hover);
+            root.style.setProperty('--accent-blue-glow', meta.glow);
+            root.style.setProperty('--light-blue', meta.light);
+            root.style.setProperty('--lighter-blue', meta.lighter);
+            root.style.setProperty('--border-color', meta.border);
+            root.style.setProperty('--border-color-hover', meta.borderHover);
+            root.style.setProperty('--accent-blue-rgb', meta.rgb);
+
+            // Update brand texts
+            document.getElementById('brand-service-name').textContent = meta.brandName;
+            document.getElementById('brand-subtitle').textContent = meta.subtitle;
+            document.getElementById('terminal-command').textContent = meta.terminalCmd;
+
+            // Build sub-selector
+            const subSelector = document.getElementById('sub-selector');
+            const subButtons = document.getElementById('sub-buttons');
+            const subLabel = document.getElementById('sub-selector-label');
+
+            if (meta.subOptions) {
+                // Non-Disney: show sub-options
+                subButtons.innerHTML = '';
+                Object.entries(meta.subOptions).forEach(([key, label]) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'sub-btn';
+                    btn.dataset.subOption = key;
+                    btn.textContent = label;
+                    btn.addEventListener('click', () => selectSubOption(key, btn));
+                    subButtons.appendChild(btn);
+                });
+                subLabel.textContent = `> ${meta.name} — Tipo de búsqueda`;
+                subSelector.classList.add('visible');
+            } else {
+                // Disney: no sub-options needed
+                subSelector.classList.remove('visible');
+                selectedSubOption = null; // Disney doesn't need sub_option
+            }
+        }
+
+        function selectSubOption(key, btnEl) {
+            selectedSubOption = key;
+            document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+        }
+
+        // Manejar búsqueda
+        async function handleDisneySearch(event) {
+            event.preventDefault();
+
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                showSearchResult('error', '❌ Por favor ingresa un email válido');
+                return;
+            }
+
+            // Validación de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showSearchResult('error', '❌ El formato del email no es válido');
+                return;
+            }
+
+            // Validar servicio seleccionado
+            if (!selectedService) {
+                showSearchResult('error', '❌ Selecciona un servicio antes de buscar');
+                return;
+            }
+
+            // Validar sub-opción si es servicio no-Disney
+            const meta = SERVICE_META[selectedService];
+            if (meta.subOptions && !selectedSubOption) {
+                showSearchResult('error', `❌ Selecciona un tipo de búsqueda para ${meta.name}`);
+                return;
+            }
+
+            searchBtn.disabled = true;
+            searchBtn.classList.add('loading');
+            hideSearchResult();
+            hideDisneyResult();
+
+            try {
+                const body = {
+                    email: email,
+                    csrfToken: csrfToken,
+                    service: selectedService,
+                    subOption: selectedSubOption || ''
+                };
+
+                const response = await fetch('/api/search-disney', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error en la búsqueda');
+                }
+
+                const data = await response.json();
+
+                searchCount++;
+                updateStatistics();
+
+                if (data.found && data.result) {
+                    showDisneyResult(data.result);
+                } else {
+                    const svcName = meta.name;
+                    showSearchResult('info', `🔍 No se encontraron resultados de ${svcName} en los últimos 2 días para este email.`);
+                }
+
+            } catch (error) {
+                showSearchResult('error', `❌ Error: ${error.message}`);
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.classList.remove('loading');
+            }
+        }
+
+        // Mostrar resultado - ✅ SECURE: XSS Protection
+        function showDisneyResult(result) {
+            const typeNames = {
+                'Disney Plus Code': '🏰 Disney Plus',
+                'Disney Household Code': '🏠 Disney Household',
+                'My Disney OTP': '🎭 My Disney OTP',
+                'Disney Code': '✨ Disney'
+            };
+
+            // Determine display name: check fixed mappings first, then fall back to result.type
+            const typeName = typeNames[result.type] || `✨ ${escapeHtml(result.type)}`;
+
+            // Detect if the code is a URL (link-type results for Crunchyroll/Max)
+            const isUrl = /^https?:\/\//i.test(result.code);
+
+            // ✅ SECURITY: Sanitize all user-controlled data before inserting into DOM
+            const sanitizedCode = escapeHtml(result.code);
+            const sanitizedEmail = escapeHtml(result.email);
+            const sanitizedDate = escapeHtml(result.date);
+            const sanitizedSubject = escapeHtml(result.subject);
+
+            let codeHtml;
+            if (isUrl) {
+                // Show as clickable link + copy button
+                codeHtml = `
+                    <div class="disney-code" style="font-size:0.85rem;letter-spacing:0;word-break:break-all;"
+                         onclick="copyToClipboard('${sanitizedCode.replace(/'/g, "\\'")}')"
+                         title="Click para copiar link">
+                        🔗 ${sanitizedCode}
+                    </div>`;
+            } else {
+                codeHtml = `
+                    <div class="disney-code" onclick="copyToClipboard('${sanitizedCode}')" title="Click para copiar">
+                        ${sanitizedCode}
+                    </div>`;
+            }
+
+            disneyResultDiv.innerHTML = `
+                <button class="result-close-btn" onclick="hideDisneyResult()" title="Cerrar">✕</button>
+                <div class="disney-result-header">
+                    <span>${typeName}</span>
+                </div>
+                ${codeHtml}
+                <div class="disney-details">
+                    <span class="disney-label">📧 Email:</span>
+                    <span class="disney-value">${sanitizedEmail}</span>
+                    <span class="disney-label">📅 Fecha:</span>
+                    <span class="disney-value">${sanitizedDate}</span>
+                    <span class="disney-label">📋 Asunto:</span>
+                    <span class="disney-value">${sanitizedSubject}</span>
+                </div>
+            `;
+
+            // Show the overlay
+            document.getElementById('result-overlay').classList.add('show');
+        }
+
+        // Ocultar resultado Disney (overlay)
+        function hideDisneyResult() {
+            document.getElementById('result-overlay').classList.remove('show');
+        }
+
+        // Mostrar resultado de búsqueda - ✅ SECURE: XSS Protection
+        function showSearchResult(type, message) {
+            searchResultDiv.className = `search-result ${type}`;
+            // ✅ SECURITY: Using textContent instead of innerHTML prevents XSS
+            searchResultDiv.textContent = message;
+            searchResultDiv.classList.add('show');
+
+            // Auto-ocultar después de 8 segundos
+            setTimeout(() => {
+                hideSearchResult();
+            }, 8000);
+        }
+
+        // Ocultar resultado de búsqueda
+        function hideSearchResult() {
+            searchResultDiv.classList.remove('show');
+        }
+
+        // Copiar al portapapeles
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showSearchResult('success', `📋 Código copiado: ${text}`);
+            }).catch(() => {
+                // Fallback para navegadores que no soportan clipboard API
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSearchResult('success', `📋 Código copiado: ${text}`);
+                } catch {
+                    showSearchResult('error', '❌ Error al copiar código');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        // Manejar logout
+        async function handleLogout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                showSearchResult('error', '❌ Error cerrando sesión');
+            }
+        }
+
+        window.addEventListener('error', function (e) {
+            console.error('Error global:', e.error);
+        });
+    </script>
+</body>
+
+</html>
